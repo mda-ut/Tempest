@@ -146,7 +146,7 @@ void set_pid_constants_depth(double P, double I, double D, double Alpha)
     set_pid_constants(P, I, D, Alpha, &PID_Depth);
 }
 
-double motor_force_to_pwm (double force) {
+double motor_force_to_pwm (double force) { //QUESTION MARK THIS IS WEIRD AF
     int pwm = ZERO_PWM + pwm_of_force(force*FACTOR_CONTROLLER_FORCE_TO_LBS);
     return pwm;
 }
@@ -156,8 +156,8 @@ double motor_force_to_pwm (double force) {
 // the force if any motor pwm does exceed the limit.
 #define MAX_FORCE_BALANCING_LOOPS 10
 bool stabilizing_motors_force_to_pwm (
-        double f_1, double f_2, double f_3,
-        double *m_1, double *m_2, double *m_3
+        double f_0, double f_1, double f_2, double f_3,
+        double *m_0, double *m_1, double *m_2, double *m_3
 )
 {
     unsigned loops;
@@ -165,20 +165,22 @@ bool stabilizing_motors_force_to_pwm (
 
     for (loops = 0; loops < MAX_FORCE_BALANCING_LOOPS; loops++) {
         // calculate the pwms
+        *m_0 = motor_force_to_pwm(f_0);
         *m_1 = motor_force_to_pwm(f_1);
         *m_2 = motor_force_to_pwm(f_2);
-        if (m_3) {
-            *m_3 = motor_force_to_pwm(f_3);
-        }
+        *m_3 = motor_force_to_pwm(f_3);
+        
 
         double pwm_limit = MAX_PWM;
 
         // if any pwm is out of bound
-        if (ABS(*m_1) > pwm_limit ||
+        if (ABS(*m_0) > pwm_limit ||
+            ABS(*m_1) > pwm_limit ||
             ABS(*m_2) > pwm_limit ||
-            (m_3 && ABS(*m_3) > pwm_limit))
+            ABS(*m_3) > pwm_limit)
         {
             // reduce force
+            f_0 *= FORCE_REDUCTION_FACTOR;
             f_1 *= FORCE_REDUCTION_FACTOR;
             f_2 *= FORCE_REDUCTION_FACTOR;
             f_3 *= FORCE_REDUCTION_FACTOR;
@@ -229,17 +231,24 @@ void calculate_pid()
    /** orientation stability
     *  If the COM is off center we would have some sort of factors here instead of 0.5
     */
-
-   double m_front_left, m_front_right, m_rear, m_left, m_right;
+   //subgroup A: 						
+   double m_front_left, m_front_right, m_back_left, m_back_right;
+   //subgroup B:
+   double mp_front_left, mp_front_right, mp_back_left, mp_back_right; //mp = motor perpendicular
    
    stabilizing_motors_force_to_pwm ( // this calculates the pwms for yaw motors
 				    // These are actually switched for SubZero
-      0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_left
-      -0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_right
-      0, // unused
-      &m_left,
-      &m_right,
-      NULL
+      //0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_front_left //we might change hard-coded 0.5 ratio later
+      //-0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_front_right
+      //0, //
+	0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_left 
+	-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_right 
+	0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_left 
+	-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_right
+	&m_front_left, //assumptions: polarity of motors: + pointed towards front O-ring
+	&m_front_right, //positive yaw is left turn
+      	&m_back_left, //positive foward is forward
+      	&m_back_right //most importantly, assume motors work like rudders kicking backwards
    );
 #ifdef PRIORITIZE_PITCH_OVER_DEPTH
    if (ABS(current_orientation.pitch) > 30) {
@@ -253,19 +262,28 @@ void calculate_pid()
    }
 #endif
    stabilizing_motors_force_to_pwm ( // this calculates the pwms for pitch and roll motors
-      0.5*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed, // m_front_left
-      -0.5*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed, // m_front_right
-      -0.5*Pitch_Force_Needed + 0.4*Depth_Force_Needed, // m_rear
-      &m_front_left,
-      &m_front_right,
-      &m_rear
+      //0.5*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed, // m_front_left
+      //-0.5*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed, // m_front_right
+      //-0.5*Pitch_Force_Needed + 0.4*Depth_Force_Needed, // m_rear
+      	0.25*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed // mp_front_left
+	-0.25*Roll_Force_Needed + 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed // mp_front_right
+	0.25*Roll_Force_Needed - 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed // mp_back_left
+	-0.25*Roll_Force_Needed - 0.2*Pitch_Force_Needed + 0.2*Depth_Force_Needed // mp_back_right
+	&mp_front_left, //assumptions: polarity of motors: + pointed towards water surface
+      	&mp_front_right, //positive roll is CCW if we are looking at the back O-ring of the submarine
+      	&mp_back_left, //positive depth is deeper
+      	&mp_back_right //positive pitch is nose dive
    );
 
    M_FRONT_LEFT = (int)m_front_left;
    M_FRONT_RIGHT = (int)m_front_right;
-   M_LEFT = (int)m_left;
-   M_RIGHT = (int)m_right;
-   M_REAR = (int)m_rear;
+   M_BACK_LEFT = (int)m_back_left;
+   M_BACK_RIGHT = (int)m_back_right;
+   MP_FRONT_LEFT = (int)mp_front_left;
+   MP_FRONT_RIGHT = (int)mp_front_right;
+   MP_BACK_LEFT = (int)mp_pback_left;
+   MP_BACK_RIGHT = (int)mp_back_right;
+
 
    /** Note that motor_force_to_pwm returns a value between -400 and 400, and the factors are such that the sum of
     *  each factor for every motor adds up (absolutely) to 1.0. Physics son! 
@@ -273,7 +291,7 @@ void calculate_pid()
    
    // write the motor settings
    int i;
-   for ( i = 0; i < 5; i++ )
+   for ( i = 0; i < 8; i++ )
    {
       set_motor_duty_cycle(i, motor_duty_cycle[i]);  
    }  
