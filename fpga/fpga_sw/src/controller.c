@@ -291,7 +291,7 @@ void calculate_pid()
    
    // write the motor settings
    int i;
-   for ( i = 0; i < 8; i++ )
+   for ( i = 0; i < NUM_MOTORS; i++ )
    {
       set_motor_duty_cycle(i, motor_duty_cycle[i]);  
    }  
