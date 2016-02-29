@@ -232,23 +232,23 @@ void calculate_pid()
     *  If the COM is off center we would have some sort of factors here instead of 0.5
     */
    //subgroup A: 						
-   double m_front_left, m_front_right, m_back_left, m_back_right;
+   double m_left, m_right;
    //subgroup B:
    double mp_front_left, mp_front_right, mp_back_left, mp_back_right; //mp = motor perpendicular
    
    stabilizing_motors_force_to_pwm ( // this calculates the pwms for yaw motors
 				    // These are actually switched for SubZero
-      //0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_front_left //we might change hard-coded 0.5 ratio later
-      //-0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_front_right
-      //0, //
-	0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_left 
-	-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_right 
-	0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_left 
-	-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_right
-	&m_front_left, //assumptions: polarity of motors: + pointed towards front O-ring
-	&m_front_right, //positive yaw is left turn
-      	&m_back_left, //positive foward is forward
-      	&m_back_right //most importantly, assume motors work like rudders kicking backwards
+      0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_left //we might change hard-coded 0.5 ratio later
+      -0.5*Yaw_Force_Needed - Forward_Force_Needed, // m_right
+      0, 0// m_back left, back right (not used)
+	//0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_left 
+	//-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_front_right 
+	//0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_left 
+	//-0.2*Yaw_Force_Needed-0.7*Forward_Force_Needed, // m_back_right
+	&m_left, //assumptions: polarity of motors: + pointed towards front O-ring
+	&m_right, //positive yaw is left turn
+      	NULL,//&m_back_left, //positive foward is forward
+      	NULL//&m_back_right //most importantly, assume motors work like rudders kicking backwards
    );
 #ifdef PRIORITIZE_PITCH_OVER_DEPTH
    if (ABS(current_orientation.pitch) > 30) {
