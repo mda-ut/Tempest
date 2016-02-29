@@ -275,10 +275,10 @@ void calculate_pid()
       	&mp_back_right //positive pitch is nose dive
    );
 
-   M_FRONT_LEFT = (int)m_front_left;
-   M_FRONT_RIGHT = (int)m_front_right;
-   M_BACK_LEFT = (int)m_back_left;
-   M_BACK_RIGHT = (int)m_back_right;
+   M_LEFT = (int)m_left;
+   M_RIGHT = (int)m_right;
+   //M_BACK_LEFT = (int)m_back_left;
+   //M_BACK_RIGHT = (int)m_back_right;
    MP_FRONT_LEFT = (int)mp_front_left;
    MP_FRONT_RIGHT = (int)mp_front_right;
    MP_BACK_LEFT = (int)mp_pback_left;
