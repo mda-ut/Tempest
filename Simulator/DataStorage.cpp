@@ -7,6 +7,6 @@ DataStorage::DataStorage()
 
 }
 
-void DataStorage::setup(irr::video::IVideoDriver *driver){
+void DataStorage::loadTextures(irr::video::IVideoDriver *driver){
     DataStorage::textures["wall.bmp"] = driver->getTexture("wall.bmp");
 }

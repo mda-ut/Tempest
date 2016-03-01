@@ -16,22 +16,28 @@ using namespace video;
 using namespace io;
 using namespace gui;
 
-
+/*
+ * The main class of the Simulator
+ */
 class Sim
 {
 public:
     Sim();
-    ~Sim();
+
+    /*
+     * Starts running the simulator
+     */
     int start();
 
 private:
+    //Irrlicht stuff
     IrrlichtDevice *device = 0;
     IVideoDriver* driver = 0;
     ISceneManager* smgr = 0;
     IGUIEnvironment* guienv = 0;
 
-    InputHandler ih;
-    std::vector<SimObject*> objs;
+    InputHandler ih;                //handles input from user
+    std::vector<SimObject*> objs;   //list of simulated objects
 };
 
 #endif // SIM_H

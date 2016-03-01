@@ -5,12 +5,20 @@
 #include <string>
 #include "irrlicht/irrlicht.h"
 
+/*
+ * Storage class for the various stuff that the program will need
+ */
 class DataStorage
 {
 public:
     DataStorage();
     static std::map<std::string, irr::video::ITexture*> textures;
-    static void setup(irr::video::IVideoDriver*);
+
+    /*
+     * Load all the required textures into the texture map
+     * The IVideoDriver is needed to load the textures
+     */
+    static void loadTextures(irr::video::IVideoDriver*);
 };
 
 #endif // DATASTORAGE_H

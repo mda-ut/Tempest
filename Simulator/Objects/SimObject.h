@@ -8,9 +8,16 @@
 #include <math.h>
 #include <cmath>
 
+/*
+ * Parent class for each simulated object
+ */
 class SimObject
 {
 public:
+    /*
+     * The string is the name/tag of the object <br>
+     * The ISceneNode is the model of the object
+     */
     SimObject(std::string, irr::scene::ISceneNode*);
     void act();
 

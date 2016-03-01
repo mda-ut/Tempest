@@ -5,6 +5,7 @@
 class InputHandler : public irr::IEventReceiver
 {
 public:
+    //TODO, MAKE ALL THIS INTO THE .CPP FILE
     InputHandler(){
         for (irr::u32 i=0; i<irr::KEY_KEY_CODES_COUNT; ++i)
             KeyIsDown[i] = false;

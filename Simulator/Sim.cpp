@@ -3,7 +3,7 @@
 
 Sim::Sim()
 {
-    /*
+    /**
      * Setup Irrlicht stuff
      */
     device = createDevice( video::EDT_OPENGL, dimension2d<u32>(640, 480), 16,
@@ -12,22 +12,24 @@ Sim::Sim()
         Logger::Log("FATAL- Could not create device");
         return;
     }
-    device->setWindowCaption(L"Hello World! - Irrlicht Engine Demo");
+    device->setWindowCaption(L"MDA Simulator 0.1");
 
     driver = device->getVideoDriver();
     smgr = device->getSceneManager();
     guienv = device->getGUIEnvironment();
 
-    /*
+    /**
      * Load textures into the map
      */
     DataStorage::setup(driver);
 
+    /**
+     * Loads the nodes into the scene
+     */
     ISceneNode *b = smgr->addSphereSceneNode();
     if (!b){
         Logger::Log("Could not create sphere node");
     }else{
-        //b->setMaterialTexture(0, driver->getTexture("wall.bmp"));
         Buoy *ball = new Buoy("ball", b);
         objs.push_back(ball);
     }
@@ -36,19 +38,16 @@ Sim::Sim()
 Sim::~Sim(){
 
 }
-/*
-std::map Sim::textures = []{
-    std::map textures;
-}();
-*/
 
 int Sim::start(){
+    //if the device cannot be created, just exit the program
     if (!device)
         return 1;    
 
-    guienv->addStaticText(L"Hello World! This is the Irrlicht Software renderer!",
+    guienv->addStaticText(L"Hello World!",
         rect<s32>(10,10,260,22), true);
 
+    //Add camera node to a static position. Need to change later to have this on the sub
     smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
 
     // In order to do framerate independent movement, we have to know
@@ -61,14 +60,16 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
+        //temp stuff for testing
         SimObject *b = objs.at(0);
         vector3df acc = b->getAcc();
-        std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Sim";
+        std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y)
+                + ' ' + std::to_string(acc.Z) + " Sim";
         Logger::Log(msg);
 
+        //input processing
         if(ih.IsKeyDown(irr::KEY_KEY_W)){
             acc.Y += 5 * frameDeltaTime;
-            Logger::Log("W");
         }
         else if(ih.IsKeyDown(irr::KEY_KEY_S))
             acc.Y -= 5 * frameDeltaTime;

@@ -19,8 +19,6 @@ void SimObject::act(){
         //acc += fri;
         std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Act";
         Logger::Log(msg);
-        msg = std::to_string(vel.X) + ' ' + std::to_string(vel.Y) + ' ' + std::to_string(vel.Z) + " Act";
-        Logger::Log(msg);
         if (fabs(acc.X)-friction < 0)
             acc.X = 0;
         else
@@ -36,7 +34,8 @@ void SimObject::act(){
     }
     if (vel.getLength() > 0){
         pos += vel;
-
+        std::string msg = std::to_string(vel.X) + ' ' + std::to_string(vel.Y) + ' ' + std::to_string(vel.Z) + " Act";
+        Logger::Log(msg);
         if (fabs(vel.X)-0.01f < 0){
             vel.X = 0;
         }else{

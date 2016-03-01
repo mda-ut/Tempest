@@ -7,8 +7,12 @@ class Logger
 {
 public:
     Logger();
-    static void Log(std::string);
 
+    /*
+     * Logs the message
+     * TODO add priority, might copy jon's logger
+     */
+    static void Log(std::string);
 };
 
 #endif // LOGGER_H
