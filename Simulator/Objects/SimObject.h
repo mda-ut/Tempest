@@ -1,6 +1,6 @@
 #ifndef SIMOBJECT_H
 #define SIMOBJECT_H
-#include "irrlicht/vector3d.h"
+#include "vector3d.h"
 #include "irrlicht.h"
 #include "Logger.h"
 #include "DataStorage.h"

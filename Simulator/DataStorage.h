@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-#include "irrlicht/irrlicht.h"
+#include "irrlicht.h"
 
 /*
  * Storage class for the various stuff that the program will need

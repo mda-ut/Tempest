@@ -1,7 +1,7 @@
 #ifndef SIM_H
 #define SIM_H
 
-#include "irrlicht/irrlicht.h"
+#include "irrlicht.h"
 #include "Objects/SimObject.h"
 #include "Objects/Buoy.h"
 #include "Logger.h"
@@ -35,6 +35,7 @@ private:
     IVideoDriver* driver = 0;
     ISceneManager* smgr = 0;
     IGUIEnvironment* guienv = 0;
+    ISceneNodeAnimatorCollisionResponse* anim = 0;
 
     InputHandler ih;                //handles input from user
     std::vector<SimObject*> objs;   //list of simulated objects
