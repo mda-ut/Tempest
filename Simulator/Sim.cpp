@@ -1,15 +1,16 @@
 #include "Sim.h"
 
 
-Sim::Sim()
+Sim::Sim(cv::Mat* frame)
 {
+    this->frame = frame;
     /**
      * Setup Irrlicht stuff
      */
     //device = createDevice( video::EDT_OPENGL, dimension2d<u32>(1280, 960), 16,
       //      false, true, false, &ih);
     SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
-    params.AntiAlias = 8;
+    //params.AntiAlias = 8;
     params.DriverType = video::EDT_OPENGL;
     params.WindowSize = core::dimension2d<u32>(640, 480);
     params.EventReceiver = &ih;
@@ -140,7 +141,6 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
-
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
                 vector3df acc = so->getAcc();
@@ -212,6 +212,17 @@ int Sim::start(){
         guienv->drawAll();
 
         driver->endScene();
+
+        //convert Irrlicht render into OpenCV Mat
+        IImage* image = driver->createScreenShot();
+        for(int y = 0; y < frame->rows; y++){
+            for(int x = 0; x < frame->cols; x++){
+                SColor color = image->getPixel(x, y).color;
+                cv::Vec3b CVColor(color.getBlue(), color.getGreen(), color.getRed());
+                frame->at<cv::Vec3b>(y,x) = CVColor;
+            }
+        }
+
     }
     device->closeDevice();
     return 0;

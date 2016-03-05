@@ -9,6 +9,7 @@
 #include "InputHandler.h"
 #include "DataStorage.h"
 #include <vector>
+#include <opencv/cv.h>
 
 using namespace irr;
 using namespace core;
@@ -23,7 +24,7 @@ using namespace gui;
 class Sim
 {
 public:
-    Sim();
+    Sim(cv::Mat*);
 
     /*
      * Starts running the simulator
@@ -44,6 +45,9 @@ private:
 
     InputHandler ih;                //handles input from user
     std::vector<SimObject*> objs;   //list of simulated objects
+
+    //current frame in cv::Mat
+    cv::Mat *frame;
 };
 
 #endif // SIM_H
