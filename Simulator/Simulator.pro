@@ -15,9 +15,9 @@ QT += widgets testlib opengl
 
 #FOR THE FOLLOWING, CHANGE TO WHERE EVER YOUR IRRLICHT FILES ARE
 #IF YOU GET ALOT OF QT ERRORS, YOU WILL NEED THE MODIFIED IRRLICHT FILES THAT I HAVE
-LIBS += -L/usr/lib/x86_64-linux-gnu/ -L/home/james/Downloads/irrlicht-1.8.3/lib/Linux/ -lIrrlicht -lGLU -lGL -lXrandr -lXext -lX11
-INCLUDEPATH += /home/james/Downloads/irrlicht-1.8.3/lib/Linux
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../Downloads/irrlicht-1.8.3/lib/Linux/libIrrlicht.a
+LIBS += -L/usr/lib/x86_64-linux-gnu/ -L$$PWD/irrlicht-1.8.3/lib/Linux/ -lIrrlicht -lGLU -lGL -lXrandr -lXext -lX11
+INCLUDEPATH += $$PWD/irrlicht-1.8.3/lib/Linux $$PWD/irrlicht-1.8.3/include
+unix:!macx: PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/libIrrlicht.a
 
 SOURCES += main.cpp \
     Objects/Buoy.cpp \
@@ -25,7 +25,8 @@ SOURCES += main.cpp \
     DataStorage.cpp \
     InputHandler.cpp \
     Logger.cpp \
-    Sim.cpp
+    Sim.cpp \
+    Objects/Sub.cpp
 
 HEADERS += \
     Objects/Buoy.h \
@@ -33,4 +34,18 @@ HEADERS += \
     DataStorage.h \
     InputHandler.h \
     Logger.h \
-    Sim.h
+    Sim.h \
+    Objects/Sub.h
+
+#win32:CONFIG(release, debug|release): LIBS += -L$$PWD/irrlicht-1.8.3/lib/Linux/release/ -lIrrlicht
+#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/irrlicht-1.8.3/lib/Linux/debug/ -lIrrlicht
+#else:unix: LIBS += -L$$PWD/irrlicht-1.8.3/lib/Linux/ -lIrrlicht
+
+#INCLUDEPATH += $$PWD/irrlicht-1.8.3/lib/Linux $$PWD/irrlicht-1.8.3/include
+#DEPENDPATH += $$PWD/irrlicht-1.8.3/lib/Linux
+
+#win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/release/libIrrlicht.a
+#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/debug/libIrrlicht.a
+#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/release/Irrlicht.lib
+#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/debug/Irrlicht.lib
+#else:unix: PRE_TARGETDEPS += $$PWD/irrlicht-1.8.3/lib/Linux/libIrrlicht.a

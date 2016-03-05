@@ -1,6 +1,6 @@
 #ifndef SIMOBJECT_H
 #define SIMOBJECT_H
-#include "irrlicht/vector3d.h"
+#include "vector3d.h"
 #include "irrlicht.h"
 #include "Logger.h"
 #include "DataStorage.h"
@@ -19,10 +19,13 @@ public:
      * The ISceneNode is the model of the object
      */
     SimObject(std::string, irr::scene::ISceneNode*);
-    void act();
+    void update();
+    void reset();
 
     void setAcc(irr::core::vector3df);
     irr::core::vector3df getAcc();
+    irr::core::vector3df getPos();
+    std::string getName();
 
 protected:
     std::string name;
