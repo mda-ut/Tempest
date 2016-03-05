@@ -9,7 +9,7 @@
 #include "InputHandler.h"
 #include "DataStorage.h"
 #include <vector>
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 
 using namespace irr;
 using namespace core;

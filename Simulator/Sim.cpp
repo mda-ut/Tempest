@@ -222,6 +222,8 @@ int Sim::start(){
                 frame->at<cv::Vec3b>(y,x) = CVColor;
             }
         }
+        cv::imshow("frame", *frame);
+        cv::waitKey(1);
 
     }
     device->closeDevice();

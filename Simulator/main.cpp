@@ -1,29 +1,30 @@
-/*
-#include "irrlicht/irrlicht.h"
-
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-
-
-using namespace irr;
-using namespace core;
-using namespace scene;
-using namespace video;
-using namespace io;
-using namespace gui;
-using namespace cv;
-*/
 #include "Sim.h"
 #include <opencv2/opencv.hpp>
+#include <pthread.h>
+
+pthread_t* clientThread;
+pthread_mutex_t* clientLock;
+
+void* run(void* frame){
+    Sim sim ((cv::Mat*)frame);
+    sim.start();
+}
+
 int main()
 {
-    cv::Mat *f = new cv::Mat(640, 480,CV_8UC3);
-    Sim sim (f);
-    sim.start();
+    cv::Mat *f = new cv::Mat(240, 640, CV_8UC3);
+    run(f);
+    /*pthread_t thread;
+    int rc = pthread_create(&thread, NULL, run, f);
+    if (rc)
+           std::cout<<"Couldnt create thread"<<std::endl;
+    while (1){
+        cv::imshow("Frame", *f);
+        if (cv::waitKey() == 27){
+            break;
+        }
+    }
+    pthread_exit(NULL);*/
     delete (f);
     return 0;
 }
-
-/*
-That's it. Compile and run.
-**/
