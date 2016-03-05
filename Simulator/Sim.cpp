@@ -11,7 +11,8 @@ Sim::Sim()
     SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
     params.AntiAlias = 8;
     params.DriverType = video::EDT_OPENGL;
-    params.WindowSize = core::dimension2d<u32>(1280, 960);
+    params.WindowSize = core::dimension2d<u32>(640, 480);
+    params.EventReceiver = &ih;
     device = createDeviceEx(params);
     if (!device){
         Logger::Log("FATAL- Could not create device");
@@ -38,6 +39,10 @@ Sim::Sim()
         Buoy *ball = new Buoy("ball", b);
         objs.push_back(ball);
     }
+
+    ISceneNode *s = smgr->addCubeSceneNode();
+    Sub *sub = new Sub("Sub", s);
+    objs.push_back(sub);
 
     //Light and Fog
     ILightSceneNode* light1 = smgr->addLightSceneNode( 0, core::vector3df(0,500,0), video::SColorf(0.3f,0.3f,0.3f), 50000.0f, 1 );
@@ -84,9 +89,15 @@ Sim::Sim()
         // We're not done with this selector yet, so don't drop it.
     }
 
-    ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
+    //ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
+    ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
+    Logger::Log(s->getPosition());
+    cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
+    cameras[1] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    s->setPosition(vector3df(-200, 212, 443));
 
-    device->getCursorControl()->setVisible(false);
+    //device->getCursorControl()->setVisible(false);
     anim = smgr->createCollisionResponseAnimator(
     selector, camera, vector3df(5,5,5),
     vector3df(0,0,0), vector3df(0,0,0));
@@ -114,7 +125,7 @@ int Sim::start(){
         rect<s32>(10,10,260,22), true);
 
     //Add camera node to a static position. Need to change later to have this on the sub
-    //smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
+    cameras[3] = smgr->addCameraSceneNode(0, vector3df(0,30,-40), vector3df(0,5,0));
 
     bool collision;
 
@@ -129,39 +140,74 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
-        //temp stuff for testing
-        SimObject *b = objs.at(0);
-        vector3df acc = b->getAcc();
-        std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y)
-                + ' ' + std::to_string(acc.Z) + " Sim";
-        Logger::Log(msg);
-
-        //input processing
-        if(ih.IsKeyDown(irr::KEY_KEY_W)){
-            acc.Y += 5 * frameDeltaTime;
-        }
-        else if(ih.IsKeyDown(irr::KEY_KEY_S))
-            acc.Y -= 5 * frameDeltaTime;
-        if(ih.IsKeyDown(irr::KEY_KEY_A))
-            acc.X -= 5 * frameDeltaTime;
-        else if(ih.IsKeyDown(irr::KEY_KEY_D))
-            acc.X += 5 * frameDeltaTime;
-
-        //std::string msg = "SIM " + std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z);
-        //Logger::Log(msg);
-        b->setAcc(acc);
 
         for (SimObject *so: objs){
-            so->setAcc(acc);
-            so->act();
+            if (so->getName() == "Sub"){
+                vector3df acc = so->getAcc();
+                //input processing
+                if(ih.IsKeyDown(irr::KEY_KEY_W)){
+                    acc.X -= 5 * frameDeltaTime;
+                }
+                else if(ih.IsKeyDown(irr::KEY_KEY_S))
+                    acc.X += 5 * frameDeltaTime;
+                if(ih.IsKeyDown(irr::KEY_KEY_A))
+                    acc.Z -= 5 * frameDeltaTime;
+                else if(ih.IsKeyDown(irr::KEY_KEY_D))
+                    acc.Z += 5 * frameDeltaTime;
+                if (ih.IsKeyDown(irr::KEY_SPACE))
+                    acc.Y += 5 * frameDeltaTime;
+                else if (ih.IsKeyDown(irr::KEY_LSHIFT))
+                    acc.Y -= 5 * frameDeltaTime;
+
+                so->setAcc(acc);
+
+                if (ih.IsKeyDown(irr::KEY_KEY_R)){
+                    so->reset();
+                }
+
+                vector3df temp = so->getPos();
+                temp.X -= 20;
+                cameras[0]->setTarget(temp);
+                //cameras[0]->setRotation(vector3df(0,0,0));
+
+                temp = so->getPos();
+                temp.Y -= 20;
+                cameras[1]->setTarget(temp);
+                //cameras[1]->setRotation(vector3df(0,0,0));
+
+                temp = so->getPos();
+                temp.Z += 20;
+                cameras[2]->setTarget(temp);
+
+                temp = so->getPos();
+                temp.Z -= 20;
+                temp.Y += 20;
+                cameras[3]->setPosition(temp);
+                cameras[3]->setTarget(so->getPos());
+                //Logger::Log(std::to_string(so->getAcc().X));
+            }
+            so->update();
         }
         //collision check
         collision = Sim::anim->collisionOccurred();
         if (collision)
             Logger::Log("collision");
 
+
+        driver->setViewPort(rect<s32>(0,0,resX, resY));
         driver->beginScene(true, true, SColor(255,100,101,140));
 
+        smgr->setActiveCamera(cameras[0]);
+        driver->setViewPort(rect<s32>(0,0,resX/2,resY/2));
+        smgr->drawAll();
+        smgr->setActiveCamera(cameras[1]);
+        driver->setViewPort(rect<s32>(resX/2,0,resX,resY/2));
+        smgr->drawAll();
+        smgr->setActiveCamera(cameras[2]);
+        driver->setViewPort(rect<s32>(0,resY/2,resX/2,resY));
+        smgr->drawAll();
+        smgr->setActiveCamera(cameras[3]);
+        driver->setViewPort(rect<s32>(resX/2,resY/2,resX,resY));
         smgr->drawAll();
         guienv->drawAll();
 

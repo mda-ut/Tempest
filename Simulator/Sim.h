@@ -4,6 +4,7 @@
 #include "irrlicht.h"
 #include "Objects/SimObject.h"
 #include "Objects/Buoy.h"
+#include "Objects/Sub.h"
 #include "Logger.h"
 #include "InputHandler.h"
 #include "DataStorage.h"
@@ -36,6 +37,10 @@ private:
     ISceneManager* smgr = 0;
     IGUIEnvironment* guienv = 0;
     ISceneNodeAnimatorCollisionResponse* anim = 0;
+
+    ICameraSceneNode* cameras[4] = {0,0,0,0};
+    int resX = 640;
+    int resY = 480;
 
     InputHandler ih;                //handles input from user
     std::vector<SimObject*> objs;   //list of simulated objects
