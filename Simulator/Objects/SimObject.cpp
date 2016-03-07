@@ -81,12 +81,20 @@ void SimObject::setAcc(irr::core::vector3df a){
     std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z);
     //Logger::Log(msg);
 }
+void SimObject::setRot(irr::core::vector3df r){
+    node->setRotation(r);
+}
+
 irr::core::vector3df SimObject::getAcc(){
     return acc;
 }
 irr::core::vector3df SimObject::getPos(){
     return node->getPosition();
 }
+irr::core::vector3df SimObject::getRot(){
+    return node->getRotation();
+}
+
 std::string SimObject::getName(){
     return name;
 }

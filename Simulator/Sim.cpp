@@ -1,9 +1,10 @@
 #include "Sim.h"
 
 
-Sim::Sim(cv::Mat* frame)
+Sim::Sim(cv::Mat* frame, InputHandler* in)
 {
     this->frame = frame;
+    this->ih = in;
     /**
      * Setup Irrlicht stuff
      */
@@ -13,13 +14,13 @@ Sim::Sim(cv::Mat* frame)
     //params.AntiAlias = 8;
     params.DriverType = video::EDT_OPENGL;
     params.WindowSize = core::dimension2d<u32>(640, 480);
-    params.EventReceiver = &ih;
+    params.EventReceiver = ih;
     device = createDeviceEx(params);
     if (!device){
         Logger::Log("FATAL- Could not create device");
         return;
     }
-    device->setWindowCaption(L"MDA Simulator 0.1");
+    device->setWindowCaption(L"MDA Simulator 1.0");
 
     driver = device->getVideoDriver();
     smgr = device->getSceneManager();
@@ -96,6 +97,8 @@ Sim::Sim(cv::Mat* frame)
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
     cameras[1] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
+    camChilds[1]->setPosition(vector3df(0,-1,0));
     s->setPosition(vector3df(-200, 212, 443));
 
     //device->getCursorControl()->setVisible(false);
@@ -107,9 +110,9 @@ Sim::Sim(cv::Mat* frame)
     {
         selector->drop(); // As soon as we're done with the selector, drop it.
         camera->addAnimator(anim);
-        //anim->drop();  // And likewise, drop the animator when we're done referring to it.
+        anim->drop();  // And likewise, drop the animator when we're done referring to it.
     }
-
+    //node->drop();
 
 }
 
@@ -141,30 +144,31 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
+        ih->update(frameDeltaTime);
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
-                vector3df acc = so->getAcc();
-                //input processing
-                if(ih.IsKeyDown(irr::KEY_KEY_W)){
-                    acc.X -= 5 * frameDeltaTime;
-                }
-                else if(ih.IsKeyDown(irr::KEY_KEY_S))
-                    acc.X += 5 * frameDeltaTime;
-                if(ih.IsKeyDown(irr::KEY_KEY_A))
-                    acc.Z -= 5 * frameDeltaTime;
-                else if(ih.IsKeyDown(irr::KEY_KEY_D))
-                    acc.Z += 5 * frameDeltaTime;
-                if (ih.IsKeyDown(irr::KEY_SPACE))
-                    acc.Y += 5 * frameDeltaTime;
-                else if (ih.IsKeyDown(irr::KEY_LSHIFT))
-                    acc.Y -= 5 * frameDeltaTime;
+               vector3df acc = so->getAcc();
+               //input processing
+               if(ih->IsKeyDown(irr::KEY_KEY_W)){
+                   acc.X -= 5 * frameDeltaTime;
+               }
+               else if(ih->IsKeyDown(irr::KEY_KEY_S))
+                   acc.X += 5 * frameDeltaTime;
+               if(ih->IsKeyDown(irr::KEY_KEY_A))
+                   acc.Z -= 5 * frameDeltaTime;
+               else if(ih->IsKeyDown(irr::KEY_KEY_D))
+                   acc.Z += 5 * frameDeltaTime;
+               if (ih->IsKeyDown(irr::KEY_SPACE))
+                   acc.Y += 5 * frameDeltaTime;
+               else if (ih->IsKeyDown(irr::KEY_LSHIFT))
+                   acc.Y -= 5 * frameDeltaTime;
 
-                so->setAcc(acc);
+               so->setAcc(acc);
 
-                if (ih.IsKeyDown(irr::KEY_KEY_R)){
-                    so->reset();
-                }
-
+               if (ih->IsKeyDown(irr::KEY_KEY_R)){
+                   so->reset();
+               }
+                //offsets for camera stuff
                 vector3df temp = so->getPos();
                 temp.X -= 20;
                 cameras[0]->setTarget(temp);
@@ -173,7 +177,9 @@ int Sim::start(){
                 temp = so->getPos();
                 temp.Y -= 20;
                 cameras[1]->setTarget(temp);
-                //cameras[1]->setRotation(vector3df(0,0,0));
+                //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
+                //cameras[1]->setRotation(so->getRot());
+                cameras[1]->setRotation(vector3df(0,0,0));
 
                 temp = so->getPos();
                 temp.Z += 20;
@@ -224,6 +230,7 @@ int Sim::start(){
         }
         cv::imshow("frame", *frame);
         cv::waitKey(1);
+        delete image;
 
     }
     device->closeDevice();
