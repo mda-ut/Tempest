@@ -95,10 +95,11 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
     Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
-    cameras[1] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    cameras[1] = smgr->addCameraSceneNode(s);
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
     camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
     camChilds[1]->setPosition(vector3df(0,-1,0));
+    cameras[1]->setUpVector(vector3df(-1,0,0));
     s->setPosition(vector3df(-200, 212, 443));
 
     //device->getCursorControl()->setVisible(false);
@@ -164,6 +165,7 @@ int Sim::start(){
                    acc.Y -= 5 * frameDeltaTime;
 
                so->setAcc(acc);
+               so->setRot(vector3df(0,0,0));
 
                if (ih->IsKeyDown(irr::KEY_KEY_R)){
                    so->reset();
@@ -175,11 +177,16 @@ int Sim::start(){
                 //cameras[0]->setRotation(vector3df(0,0,0));
 
                 temp = so->getPos();
-                temp.Y -= 20;
+                temp.Y -= 10;
+
                 cameras[1]->setTarget(temp);
+                //Logger::Log(cameras[1]->getScale());
                 //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
                 //cameras[1]->setRotation(so->getRot());
-                cameras[1]->setRotation(vector3df(0,0,0));
+                //cameras[1]->setRotation(vector3df(0,0,0));
+                //cameras[1]->setRotation(so->getPos());
+                //cameras[1]->setPosition(so->getPos());
+                cameras[1]->setRotation(temp);
 
                 temp = so->getPos();
                 temp.Z += 20;
@@ -233,6 +240,7 @@ int Sim::start(){
         delete image;
 
     }
+    smgr->drop();
     device->closeDevice();
     return 0;
 }
