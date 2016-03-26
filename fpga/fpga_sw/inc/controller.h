@@ -25,26 +25,24 @@ struct orientation {
 
 // Motor 0 = front left horizontal
 // Motor 1 = front right horizontal
-// Motor 2 = back left horizontal
-// Motor 3 = back right horizontal
-// Motor 4 = front left vertical
-// Motor 5 = front right vertical
-// Motor 6 = back left vertical
-// Motor 7 = back right vertical
+// Motor 3 = front left vertical
+// Motor 4 = front right vertical
+// Motor 5 = back left vertical
+// Motor 6 = back right vertical
 /*#define M_FRONT_LEFT motor_duty_cycle[0]
 #define M_FRONT_RIGHT motor_duty_cycle[1]
 #define M_LEFT motor_duty_cycle[2]
 #define M_RIGHT motor_duty_cycle[3]
 #define M_REAR motor_duty_cycle[4]*/
 
-#define M_FRONT_LEFT motor_duty_cycle[0]
-#define M_FRONT_RIGHT motor_duty_cycle[1]
-#define M_BACK_LEFT motor_duty_cycle[2]
-#define M_BACK_RIGHT motor_duty_cycle[3]
-#define MP_FRONT_LEFT motor_duty_cycle[4]
-#define MP_FRONT_RIGHT motor_duty_cycle[5]
-#define MP_BACK_LEFT motor_duty_cycle[6]
-#define MP_BACK_RIGHT motor_duty_cycle[7]
+#define M_LEFT motor_duty_cycle[0]
+#define M_RIGHT motor_duty_cycle[1]
+//#define M_BACK_LEFT motor_duty_cycle[2]
+//#define M_BACK_RIGHT motor_duty_cycle[3]
+#define MP_FRONT_LEFT motor_duty_cycle[2]
+#define MP_FRONT_RIGHT motor_duty_cycle[3]
+#define MP_BACK_LEFT motor_duty_cycle[4]
+#define MP_BACK_RIGHT motor_duty_cycle[5]
 
 void set_target_speed(int speed);
 void set_target_heading(int heading);
