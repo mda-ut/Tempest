@@ -43,7 +43,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     }
 
     ISceneNode *s = smgr->addCubeSceneNode();
-    Sub *sub = new Sub("Sub", s);
+    Sub *sub = new Sub("Sub", s, ih);
     objs.push_back(sub);
 
     //Light and Fog
@@ -104,8 +104,8 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
 
     //device->getCursorControl()->setVisible(false);
     anim = smgr->createCollisionResponseAnimator(
-    selector, camera, vector3df(5,5,5),
-    vector3df(0,0,0), vector3df(0,0,0));
+    selector, s, vector3df(20,20,20),
+    vector3df(0,-10,0), vector3df(0,20,0));
 
     if (selector)
     {
@@ -146,9 +146,13 @@ int Sim::start(){
         then = now;
 
         ih->update(frameDeltaTime);
+        Logger::Log("FDT");
+        Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
-               vector3df acc = so->getAcc();
+
+                /*
+               vector3df acc;
                //input processing
                if(ih->IsKeyDown(irr::KEY_KEY_W)){
                    acc.X -= 5 * frameDeltaTime;
@@ -162,14 +166,17 @@ int Sim::start(){
                if (ih->IsKeyDown(irr::KEY_SPACE))
                    acc.Y += 5 * frameDeltaTime;
                else if (ih->IsKeyDown(irr::KEY_LSHIFT))
-                   acc.Y -= 5 * frameDeltaTime;
+                   acc.Y -= 5 * frameDeltaTime;*/
 
-               so->setAcc(acc);
+               so->setAcc(ih->getAcc());
                so->setRot(vector3df(0,0,0));
 
                if (ih->IsKeyDown(irr::KEY_KEY_R)){
                    so->reset();
                }
+               Logger::Log(ih->getAcc());
+                //so->setAcc(ih->getAcc());
+                //so->setRot(ih->getRot());
                 //offsets for camera stuff
                 vector3df temp = so->getPos();
                 temp.X -= 20;
@@ -199,7 +206,8 @@ int Sim::start(){
                 cameras[3]->setTarget(so->getPos());
                 //Logger::Log(std::to_string(so->getAcc().X));
             }
-            so->update();
+            so->update(frameDeltaTime);
+            //ih->setAcc();
         }
         //collision check
         collision = Sim::anim->collisionOccurred();
@@ -231,6 +239,10 @@ int Sim::start(){
         for(int y = 0; y < frame->rows; y++){
             for(int x = 0; x < frame->cols; x++){
                 SColor color = image->getPixel(x, y).color;
+                if (color.getBlue()+150 > 255)
+                    color.setBlue(255);
+                else
+                    color.setBlue(color.getBlue()+150);
                 cv::Vec3b CVColor(color.getBlue(), color.getGreen(), color.getRed());
                 frame->at<cv::Vec3b>(y,x) = CVColor;
             }

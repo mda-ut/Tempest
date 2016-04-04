@@ -9,27 +9,30 @@ InputHandler::InputHandler(bool u){
     useKey = u;
 }
 
-void InputHandler::update(irr::f32 frameDeltaTime){
+void InputHandler::update(irr::f32 dt){
+    acc.X = 0;
+    acc.Y = 0;
+    acc.Z = 0;
     if (useKey){
         //input processing
         if(IsKeyDown(irr::KEY_KEY_W)){
-            acc.X -= 5 * frameDeltaTime;
+            acc.X = -5;
         }
         else if(IsKeyDown(irr::KEY_KEY_S))
-            acc.X += 5 * frameDeltaTime;
+            acc.X = 5;
         if(IsKeyDown(irr::KEY_KEY_A))
-            acc.Z -= 5 * frameDeltaTime;
+            acc.Z = -5;
         else if(IsKeyDown(irr::KEY_KEY_D))
-            acc.Z += 5 * frameDeltaTime;
+            acc.Z = 5 ;
         if (IsKeyDown(irr::KEY_SPACE))
-            acc.Y += 5 * frameDeltaTime;
+            acc.Y = 5 ;
         else if (IsKeyDown(irr::KEY_LSHIFT))
-            acc.Y -= 5 * frameDeltaTime;
+            acc.Y = -5;
 
         if (IsKeyDown(irr::KEY_KEY_Q)){
-            rot.X += 20 * frameDeltaTime;
+            rot.X = 20;
         }else if (IsKeyDown(irr::KEY_KEY_E)){
-            rot.X -= 20 * frameDeltaTime;
+            rot.X = -20 ;
         }
     }
 

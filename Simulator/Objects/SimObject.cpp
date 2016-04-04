@@ -11,57 +11,47 @@ SimObject::SimObject(std::string name, irr::scene::ISceneNode *n)
     fri.Z = -1;
 }
 
-void SimObject::update(){
+void SimObject::update(float dt){
     irr::core::vector3df pos = node->getPosition();
 
-    if (acc.getLength() > 0){
-        vel += acc;
-        //acc += fri;
-        std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Act";
-        //Logger::Log(msg);
-        if (fabs(acc.X)-friction < 0)
-            acc.X = 0;
-        else
-            acc.X -= std::copysign(friction, acc.X);
-        if (fabs(acc.Y)-friction < 0)
-            acc.Y = 0;
-        else
-            acc.Y -= std::copysign(friction, acc.Y);
-        if (fabs(acc.Z)-friction < 0)
-            acc.Z = 0;
-        else
-            acc.Z -= std::copysign(friction, acc.Z);
-    }
-    if (vel.getLength() > 0){
-        if (vel.getLength() > 5){
-            vel = vel.normalize()*5;
-        }
-        pos += vel;
-        std::string msg = std::to_string(vel.X) + ' ' + std::to_string(vel.Y) + ' ' + std::to_string(vel.Z) + " Act";
-        //Logger::Log(msg);
-        if (fabs(vel.X)-friction/10.0f< 0){
+    if (vel.getLengthSQ() > 0){
+        if (fabs(vel.X+acc.X*dt) < friction*dt){
             vel.X = 0;
-        }else{
-            vel.X += std::copysign(friction/10.0f, -vel.X);
+            acc.X = 0;
+        }else if (fabs(vel.X) > 0){
+            float temp = std::copysign(friction*dt, vel.X);
+            vel.X -= temp;
         }
 
-        if (fabs(vel.Y)-friction/10.0f < 0){
+        if (fabs(vel.Y+acc.Y*dt) < friction*dt){
             vel.Y = 0;
-        }else{
-            vel.Y += std::copysign(friction/10.0f, -vel.Y);
+            acc.Y = 0;
+        }else if (fabs(vel.Y) > 0){
+            float temp = std::copysign(friction*dt, vel.Y);
+            vel.Y -= temp;
         }
 
-        if (fabs(vel.Z)-friction/10.0f < 0){
+        if (fabs(vel.Z+acc.Z*dt) < friction*dt){
             vel.Z = 0;
-        }else{
-            vel.Z += std::copysign(friction/10.0f, -vel.Z);
+            acc.Z = 0;
+        }else if (fabs(vel.Z) > 0){
+            float temp = std::copysign(friction*dt, vel.Z);
+            vel.Z -= temp;
         }
-
-        node->setPosition(pos);
-        node->setRotation(irr::core::vector3df(0,0,0));
     }
-    //std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Act";
-    //Logger::Log(msg);
+
+
+
+    if (vel.getLength() > 5){
+        vel = vel.normalize()*5;
+    }
+    vel += acc*dt;
+    pos += vel;
+
+    Logger::Log("Acc " + std::to_string(acc.Z*dt));
+    Logger::Log("Vel " + std::to_string(vel.Z));
+
+    node->setPosition(pos);
 }
 
 void SimObject::reset(){
