@@ -11,57 +11,61 @@ SimObject::SimObject(std::string name, irr::scene::ISceneNode *n)
     fri.Z = -1;
 }
 
-void SimObject::update(){
+void SimObject::update(float dt){
+    //Note: when working with acceleration, multiply it by dt (delta time)
+    //This is needed because game engine applies phhysics based on how long it took to render the frame
+
+    //rotation----------------------------------------------------
+    irr::core::vector3df rot = node->getRotation();
+
+    //position----------------------------------------------------
     irr::core::vector3df pos = node->getPosition();
 
-    if (acc.getLength() > 0){
-        vel += acc;
-        //acc += fri;
-        std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Act";
-        //Logger::Log(msg);
-        if (fabs(acc.X)-friction < 0)
-            acc.X = 0;
-        else
-            acc.X -= std::copysign(friction, acc.X);
-        if (fabs(acc.Y)-friction < 0)
-            acc.Y = 0;
-        else
-            acc.Y -= std::copysign(friction, acc.Y);
-        if (fabs(acc.Z)-friction < 0)
-            acc.Z = 0;
-        else
-            acc.Z -= std::copysign(friction, acc.Z);
-    }
-    if (vel.getLength() > 0){
-        if (vel.getLength() > 5){
-            vel = vel.normalize()*5;
-        }
-        pos += vel;
-        std::string msg = std::to_string(vel.X) + ' ' + std::to_string(vel.Y) + ' ' + std::to_string(vel.Z) + " Act";
-        //Logger::Log(msg);
-        if (fabs(vel.X)-friction/10.0f< 0){
+    //if the velocity vector is > 0, then subject it to friction
+    if (vel.getLengthSQ() > 0){
+
+        //if the velocity + current acceleration is less than friction
+        if (fabs(vel.X+acc.X*dt) < friction*dt){
+            //stop it from moving (due to friction)
             vel.X = 0;
-        }else{
-            vel.X += std::copysign(friction/10.0f, -vel.X);
+            acc.X = 0;
+        }
+        //if not and velocity of current dimension is > 0
+        else if (fabs(vel.X) > 0){
+            //apply friction to it
+            float temp = std::copysign(friction*dt, vel.X);
+            vel.X -= temp;
         }
 
-        if (fabs(vel.Y)-friction/10.0f < 0){
+        if (fabs(vel.Y+acc.Y*dt) < friction*dt){
             vel.Y = 0;
-        }else{
-            vel.Y += std::copysign(friction/10.0f, -vel.Y);
+            acc.Y = 0;
+        }else if (fabs(vel.Y) > 0){
+            float temp = std::copysign(friction*dt, vel.Y);
+            vel.Y -= temp;
         }
 
-        if (fabs(vel.Z)-friction/10.0f < 0){
+        if (fabs(vel.Z+acc.Z*dt) < friction*dt){
             vel.Z = 0;
-        }else{
-            vel.Z += std::copysign(friction/10.0f, -vel.Z);
+            acc.Z = 0;
+        }else if (fabs(vel.Z) > 0){
+            float temp = std::copysign(friction*dt, vel.Z);
+            vel.Z -= temp;
         }
-
-        node->setPosition(pos);
-        node->setRotation(irr::core::vector3df(0,0,0));
     }
-    //std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z) + " Act";
-    //Logger::Log(msg);
+
+    //if the velocity is greater than terminal velocity(hard coded to 5 atm)
+    if (vel.getLength() > 5){
+        //stop it from going any faster
+        vel = vel.normalize()*5;
+    }
+    vel += acc*dt;
+    pos += vel;
+
+    Logger::Log("Acc " + std::to_string(acc.Z*dt));
+    Logger::Log("Vel " + std::to_string(vel.Z));
+
+    node->setPosition(pos);
 }
 
 void SimObject::reset(){
@@ -81,12 +85,20 @@ void SimObject::setAcc(irr::core::vector3df a){
     std::string msg = std::to_string(acc.X) + ' ' + std::to_string(acc.Y) + ' ' + std::to_string(acc.Z);
     //Logger::Log(msg);
 }
+void SimObject::setRot(irr::core::vector3df r){
+    node->setRotation(r);
+}
+
 irr::core::vector3df SimObject::getAcc(){
     return acc;
 }
 irr::core::vector3df SimObject::getPos(){
     return node->getPosition();
 }
+irr::core::vector3df SimObject::getRot(){
+    return node->getRotation();
+}
+
 std::string SimObject::getName(){
     return name;
 }

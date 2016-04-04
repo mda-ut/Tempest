@@ -14,6 +14,7 @@ public:
      * TODO add priority, might copy jon's logger
      */
     static void Log(std::string);
+    static void Log(float);
     static void Log(irr::core::vector3df);
 };
 

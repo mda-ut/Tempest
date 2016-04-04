@@ -19,12 +19,16 @@ public:
      * The ISceneNode is the model of the object
      */
     SimObject(std::string, irr::scene::ISceneNode*);
-    void update();
+    void update(float);
     void reset();
 
     void setAcc(irr::core::vector3df);
     irr::core::vector3df getAcc();
     irr::core::vector3df getPos();
+
+    void setRot(irr::core::vector3df);
+    irr::core::vector3df getRot();
+
     std::string getName();
 
 protected:
@@ -34,7 +38,7 @@ protected:
     irr::core::vector3df vel;
     irr::core::vector3df acc;
     irr::core::vector3df fri;
-    float friction = 0.1f;
+    float friction = 2.5f;
 
 };
 

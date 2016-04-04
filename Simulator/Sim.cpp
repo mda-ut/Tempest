@@ -1,24 +1,26 @@
 #include "Sim.h"
 
 
-Sim::Sim()
+Sim::Sim(cv::Mat* frame, InputHandler* in)
 {
+    this->frame = frame;
+    this->ih = in;
     /**
      * Setup Irrlicht stuff
      */
     //device = createDevice( video::EDT_OPENGL, dimension2d<u32>(1280, 960), 16,
       //      false, true, false, &ih);
     SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
-    params.AntiAlias = 8;
+    //params.AntiAlias = 8;
     params.DriverType = video::EDT_OPENGL;
     params.WindowSize = core::dimension2d<u32>(640, 480);
-    params.EventReceiver = &ih;
+    params.EventReceiver = ih;
     device = createDeviceEx(params);
     if (!device){
         Logger::Log("FATAL- Could not create device");
         return;
     }
-    device->setWindowCaption(L"MDA Simulator 0.1");
+    device->setWindowCaption(L"MDA Simulator 1.0");
 
     driver = device->getVideoDriver();
     smgr = device->getSceneManager();
@@ -41,7 +43,7 @@ Sim::Sim()
     }
 
     ISceneNode *s = smgr->addCubeSceneNode();
-    Sub *sub = new Sub("Sub", s);
+    Sub *sub = new Sub("Sub", s, ih);
     objs.push_back(sub);
 
     //Light and Fog
@@ -93,8 +95,12 @@ Sim::Sim()
     //ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
     Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
-    cameras[1] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    cameras[0]-> bindTargetAndRotation(true);
+    cameras[1] = smgr->addCameraSceneNode(s);
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
+    camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
+    camChilds[1]->setPosition(vector3df(0,-1,0));
+    cameras[1]->setUpVector(vector3df(-1,0,0));
     s->setPosition(vector3df(-200, 212, 443));
 
     //First vector input is the radius of the collidable object
@@ -109,7 +115,7 @@ Sim::Sim()
         //camera->addAnimator(anim);
         //anim->drop();  // And likewise, drop the animator when we're done referring to it.
     }
-
+    //node->drop();
 
 }
 
@@ -141,40 +147,48 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
-
+        ih->update(frameDeltaTime);
+        Logger::Log("FDT");
+        Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
-                vector3df acc = so->getAcc();
-                //input processing
-                if(ih.IsKeyDown(irr::KEY_KEY_W)){
-                    acc.X -= 5 * frameDeltaTime;
-                }
-                else if(ih.IsKeyDown(irr::KEY_KEY_S))
-                    acc.X += 5 * frameDeltaTime;
-                if(ih.IsKeyDown(irr::KEY_KEY_A))
-                    acc.Z -= 5 * frameDeltaTime;
-                else if(ih.IsKeyDown(irr::KEY_KEY_D))
-                    acc.Z += 5 * frameDeltaTime;
-                if (ih.IsKeyDown(irr::KEY_SPACE))
-                    acc.Y += 5 * frameDeltaTime;
-                else if (ih.IsKeyDown(irr::KEY_LSHIFT))
-                    acc.Y -= 5 * frameDeltaTime;
 
-                so->setAcc(acc);
+                so->setRot(ih->getRot());
+                Logger::Log(so->getRot());
+                so->setAcc(ih->getAcc());
 
-                if (ih.IsKeyDown(irr::KEY_KEY_R)){
-                    so->reset();
+                if (ih->IsKeyDown(irr::KEY_KEY_R)){
+                   so->reset();
                 }
 
-                vector3df temp = so->getPos();
-                temp.X -= 20;
-                cameras[0]->setTarget(temp);
+                ///offsets for camera stuff
+                //vector3df temp = so->getPos();
+                vector3df temp;
+                temp.X = -cos(so->getRot().Y*3.141589f/180.0f);
+                if (fabs(so->getRot().Y) > 0){
+                    float dZ = sin(so->getRot().Y*3.141589f/180.0f);
+                    temp.Z = dZ;
+                    Logger::Log(dZ);
+                }
+                temp.normalize();
+                temp *= 20;
+                Logger::Log("temp look:");
+                Logger::Log(temp);
+                cameras[0]->setTarget(so->getPos() + temp);
+                //cameras[0]->setRotation(so->getRot());
                 //cameras[0]->setRotation(vector3df(0,0,0));
 
                 temp = so->getPos();
-                temp.Y -= 20;
+                temp.Y -= 10;
+
                 cameras[1]->setTarget(temp);
+                //Logger::Log(cameras[1]->getScale());
+                //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
+                //cameras[1]->setRotation(so->getRot());
                 //cameras[1]->setRotation(vector3df(0,0,0));
+                //cameras[1]->setRotation(so->getPos());
+                //cameras[1]->setPosition(so->getPos());
+                cameras[1]->setRotation(temp);
 
                 temp = so->getPos();
                 temp.Z += 20;
@@ -187,7 +201,8 @@ int Sim::start(){
                 cameras[3]->setTarget(so->getPos());
                 //Logger::Log(std::to_string(so->getAcc().X));
             }
-            so->update();
+            so->update(frameDeltaTime);
+            //ih->setAcc();
         }
         //collision check
         collision = anim->collisionOccurred();
@@ -213,7 +228,26 @@ int Sim::start(){
         guienv->drawAll();
 
         driver->endScene();
+
+        //convert Irrlicht render into OpenCV Mat
+        IImage* image = driver->createScreenShot();
+        for(int y = 0; y < frame->rows; y++){
+            for(int x = 0; x < frame->cols; x++){
+                SColor color = image->getPixel(x, y).color;
+                if (color.getBlue()+150 > 255)
+                    color.setBlue(255);
+                else
+                    color.setBlue(color.getBlue()+150);
+                cv::Vec3b CVColor(color.getBlue(), color.getGreen(), color.getRed());
+                frame->at<cv::Vec3b>(y,x) = CVColor;
+            }
+        }
+        cv::imshow("frame", *frame);
+        cv::waitKey(1);
+        delete image;
+
     }
+    smgr->drop();
     device->closeDevice();
     return 0;
 }
