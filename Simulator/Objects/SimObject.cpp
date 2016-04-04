@@ -12,13 +12,27 @@ SimObject::SimObject(std::string name, irr::scene::ISceneNode *n)
 }
 
 void SimObject::update(float dt){
+    //Note: when working with acceleration, multiply it by dt (delta time)
+    //This is needed because game engine applies phhysics based on how long it took to render the frame
+
+    //rotation----------------------------------------------------
+    irr::core::vector3df rot = node->getRotation();
+
+    //position----------------------------------------------------
     irr::core::vector3df pos = node->getPosition();
 
+    //if the velocity vector is > 0, then subject it to friction
     if (vel.getLengthSQ() > 0){
+
+        //if the velocity + current acceleration is less than friction
         if (fabs(vel.X+acc.X*dt) < friction*dt){
+            //stop it from moving (due to friction)
             vel.X = 0;
             acc.X = 0;
-        }else if (fabs(vel.X) > 0){
+        }
+        //if not and velocity of current dimension is > 0
+        else if (fabs(vel.X) > 0){
+            //apply friction to it
             float temp = std::copysign(friction*dt, vel.X);
             vel.X -= temp;
         }
@@ -40,9 +54,9 @@ void SimObject::update(float dt){
         }
     }
 
-
-
+    //if the velocity is greater than terminal velocity(hard coded to 5 atm)
     if (vel.getLength() > 5){
+        //stop it from going any faster
         vel = vel.normalize()*5;
     }
     vel += acc*dt;

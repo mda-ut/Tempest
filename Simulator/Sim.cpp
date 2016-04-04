@@ -95,6 +95,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
     Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
+    cameras[0]-> bindTargetAndRotation(true);
     cameras[1] = smgr->addCameraSceneNode(s);
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
     camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
@@ -151,36 +152,29 @@ int Sim::start(){
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
 
-                /*
-               vector3df acc;
-               //input processing
-               if(ih->IsKeyDown(irr::KEY_KEY_W)){
-                   acc.X -= 5 * frameDeltaTime;
-               }
-               else if(ih->IsKeyDown(irr::KEY_KEY_S))
-                   acc.X += 5 * frameDeltaTime;
-               if(ih->IsKeyDown(irr::KEY_KEY_A))
-                   acc.Z -= 5 * frameDeltaTime;
-               else if(ih->IsKeyDown(irr::KEY_KEY_D))
-                   acc.Z += 5 * frameDeltaTime;
-               if (ih->IsKeyDown(irr::KEY_SPACE))
-                   acc.Y += 5 * frameDeltaTime;
-               else if (ih->IsKeyDown(irr::KEY_LSHIFT))
-                   acc.Y -= 5 * frameDeltaTime;*/
+                so->setRot(ih->getRot());
+                Logger::Log(so->getRot());
+                so->setAcc(ih->getAcc());
 
-               so->setAcc(ih->getAcc());
-               so->setRot(vector3df(0,0,0));
-
-               if (ih->IsKeyDown(irr::KEY_KEY_R)){
+                if (ih->IsKeyDown(irr::KEY_KEY_R)){
                    so->reset();
-               }
-               Logger::Log(ih->getAcc());
-                //so->setAcc(ih->getAcc());
-                //so->setRot(ih->getRot());
-                //offsets for camera stuff
-                vector3df temp = so->getPos();
-                temp.X -= 20;
-                cameras[0]->setTarget(temp);
+                }
+
+                ///offsets for camera stuff
+                //vector3df temp = so->getPos();
+                vector3df temp;
+                temp.X = -cos(so->getRot().Y*3.141589f/180.0f);
+                if (fabs(so->getRot().Y) > 0){
+                    float dZ = sin(so->getRot().Y*3.141589f/180.0f);
+                    temp.Z = dZ;
+                    Logger::Log(dZ);
+                }
+                temp.normalize();
+                temp *= 20;
+                Logger::Log("temp look:");
+                Logger::Log(temp);
+                cameras[0]->setTarget(so->getPos() + temp);
+                //cameras[0]->setRotation(so->getRot());
                 //cameras[0]->setRotation(vector3df(0,0,0));
 
                 temp = so->getPos();

@@ -30,9 +30,9 @@ void InputHandler::update(irr::f32 dt){
             acc.Y = -5;
 
         if (IsKeyDown(irr::KEY_KEY_Q)){
-            rot.X = 20;
+            rot.Y += -20*dt;
         }else if (IsKeyDown(irr::KEY_KEY_E)){
-            rot.X = -20 ;
+            rot.Y += 20*dt;
         }
     }
 
