@@ -92,7 +92,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     }
 
     //ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
-    ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
+    //ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
     Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
     cameras[0]-> bindTargetAndRotation(true);
@@ -103,16 +103,17 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     cameras[1]->setUpVector(vector3df(-1,0,0));
     s->setPosition(vector3df(-200, 212, 443));
 
-    //device->getCursorControl()->setVisible(false);
+    //First vector input is the radius of the collidable object
     anim = smgr->createCollisionResponseAnimator(
-    selector, s, vector3df(20,20,20),
-    vector3df(0,-10,0), vector3df(0,20,0));
+    selector, s, vector3df(7.5f,7.5f,7.5f),
+    vector3df(0,0,0), vector3df(0,0,0));
 
     if (selector)
     {
         selector->drop(); // As soon as we're done with the selector, drop it.
-        camera->addAnimator(anim);
-        anim->drop();  // And likewise, drop the animator when we're done referring to it.
+        s->addAnimator(anim);
+        //camera->addAnimator(anim);
+        //anim->drop();  // And likewise, drop the animator when we're done referring to it.
     }
     //node->drop();
 
@@ -204,7 +205,7 @@ int Sim::start(){
             //ih->setAcc();
         }
         //collision check
-        collision = Sim::anim->collisionOccurred();
+        collision = anim->collisionOccurred();
         if (collision)
             Logger::Log("collision");
 
