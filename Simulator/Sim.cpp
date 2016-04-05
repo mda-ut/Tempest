@@ -54,7 +54,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     light1->setMaterialFlag(EMF_FOG_ENABLE, true);
 
     //Load obstacles (need to be separated so that buoys can move)
-    IAnimatedMesh* mesh = smgr->getMesh("assets/obstacles.3ds");
+    IAnimatedMesh* mesh = smgr->getMesh("../assets/obstacles.3ds");
     IMeshSceneNode * node = 0;
     if (mesh)
         node = smgr->addOctreeSceneNode(mesh->getMesh(0), 0);
@@ -66,7 +66,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
         node->setScale(core::vector3df(20,20,20));
     }
 
-    IAnimatedMesh* roomMesh = smgr->getMesh("assets/stadium.3ds");
+    IAnimatedMesh* roomMesh = smgr->getMesh("../assets/stadium.3ds");
     IMeshSceneNode * roomNode = 0;
     if (roomMesh)
         roomNode = smgr->addOctreeSceneNode(roomMesh->getMesh(0), 0);
@@ -146,11 +146,12 @@ int Sim::start(){
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
-        ih->update(frameDeltaTime);
+
         Logger::Log("FDT");
         Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
+                ih->update(frameDeltaTime, so->getRot());
 
                 so->setRot(ih->getRot());
                 Logger::Log(so->getRot());
