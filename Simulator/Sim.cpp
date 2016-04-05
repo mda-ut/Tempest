@@ -100,7 +100,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
     camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
     camChilds[1]->setPosition(vector3df(0,-1,0));
-    cameras[1]->setUpVector(vector3df(-1,0,0));
+    //cameras[1]->setUpVector(vector3df(-1,0,0));
     s->setPosition(vector3df(-200, 212, 443));
 
     //device->getCursorControl()->setVisible(false);
@@ -150,12 +150,14 @@ int Sim::start(){
         Logger::Log("FDT");
         Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
+
             if (so->getName() == "Sub"){
                 ih->update(frameDeltaTime, so->getRot());
 
                 so->setRot(ih->getRot());
                 Logger::Log(so->getRot());
                 so->setAcc(ih->getAcc());
+                so->update(frameDeltaTime);
 
                 if (ih->IsKeyDown(irr::KEY_KEY_R)){
                    so->reset();
@@ -163,45 +165,64 @@ int Sim::start(){
 
                 ///offsets for camera stuff
                 //vector3df temp = so->getPos();
-                vector3df temp;
-                temp.X = -cos(so->getRot().Y*3.141589f/180.0f);
+                vector3df tempPos, tempDir;
+
+                tempDir.X = -cos(so->getRot().Y*3.141589f/180.0f);
                 if (fabs(so->getRot().Y) > 0){
                     float dZ = sin(so->getRot().Y*3.141589f/180.0f);
-                    temp.Z = dZ;
+                    tempDir.Z = dZ;
                     Logger::Log(dZ);
                 }
-                temp.normalize();
-                temp *= 20;
+                tempDir.normalize();
+                tempPos = so->getPos();
+                //temp *= 20;
                 Logger::Log("temp look:");
-                Logger::Log(temp);
-                cameras[0]->setTarget(so->getPos() + temp);
+                Logger::Log(tempPos + tempDir*20);
+                Logger::Log(tempPos + tempDir*40);
+
+                //camera attached to sub
+                //this call sets the position relative to sub
+                cameras[0]->setPosition(tempDir*5);
+                cameras[0]->setTarget(tempPos + tempDir*100);
                 //cameras[0]->setRotation(so->getRot());
                 //cameras[0]->setRotation(vector3df(0,0,0));
+                irr::core::vector3df tempBottom;
+                tempBottom = so->getPos();
+                tempBottom.Y -= 10;
+                tempBottom.X += tempDir.X/2;
+                tempBottom.Z += tempDir.Z/2;
 
-                temp = so->getPos();
-                temp.Y -= 10;
-
-                cameras[1]->setTarget(temp);
+                cameras[1]->setTarget(tempBottom);
                 //Logger::Log(cameras[1]->getScale());
                 //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
                 //cameras[1]->setRotation(so->getRot());
                 //cameras[1]->setRotation(vector3df(0,0,0));
                 //cameras[1]->setRotation(so->getPos());
                 //cameras[1]->setPosition(so->getPos());
-                cameras[1]->setRotation(temp);
+                //temp.Z=so->getRot().Y;
+                //temp.Y=0;
+                //temp.X=0;
+                //cameras[1]->bindTargetAndRotation(false);
+                //cameras[1]->setRotation(temp);
+                //cameras[1]->setRotation(temp);
 
-                temp = so->getPos();
-                temp.Z += 20;
-                cameras[2]->setTarget(temp);
+                //temp = so->getPos();
+                //temp.Z += 20;
+                cameras[2]->setTarget(tempPos);
 
-                temp = so->getPos();
-                temp.Z -= 20;
-                temp.Y += 20;
-                cameras[3]->setPosition(temp);
-                cameras[3]->setTarget(so->getPos());
+                //camera 3 not attached to sub so need to add tempPos to the position var
+                vector3df tempTP; //third person view cam
+
+                tempTP.X = tempPos.X - tempDir.X*30;
+                tempTP.Z = tempPos.Z - tempDir.Z*30;
+                tempTP.Y = tempPos.Y + 20;
+                cameras[3]->setPosition(tempTP);
+                cameras[3]->setTarget(tempPos);
                 //Logger::Log(std::to_string(so->getAcc().X));
+            } else {
+                so->update(frameDeltaTime);
             }
-            so->update(frameDeltaTime);
+
             //ih->setAcc();
         }
         //collision check
