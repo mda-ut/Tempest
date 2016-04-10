@@ -18,13 +18,21 @@ using namespace video;
 using namespace io;
 using namespace gui;
 
+struct dataCap{
+    cv::Mat* frame;
+    InputHandler* ih;
+    bool* runSim;
+    bool* threadAlive;
+};
+
 /*
  * The main class of the Simulator
  */
 class Sim
 {
 public:
-    Sim(cv::Mat*, InputHandler*);
+    //Sim(cv::Mat*, InputHandler*, bool*, bool*);
+    Sim(void*);
 
     /*
      * Starts running the simulator
@@ -49,6 +57,9 @@ private:
 
     //current frame in cv::Mat
     cv::Mat *frame;
+    dataCap* cap;
+    bool* runSim;
+    bool* threadAlive;
 };
 
 #endif // SIM_H

@@ -1,10 +1,14 @@
 #include "Sim.h"
 
 
-Sim::Sim(cv::Mat* frame, InputHandler* in)
+//Sim::Sim(cv::Mat* frame, InputHandler* in, bool* r, bool* ta)
+Sim::Sim(void* c)
 {
-    this->frame = frame;
-    this->ih = in;
+    cap = (dataCap*) c;
+    this->frame = cap->frame;
+    this->ih = cap->ih;
+    this->runSim = cap->runSim;
+    this->threadAlive = cap->threadAlive;
     /**
      * Setup Irrlicht stuff
      */
@@ -54,7 +58,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     light1->setMaterialFlag(EMF_FOG_ENABLE, true);
 
     //Load obstacles (need to be separated so that buoys can move)
-    IAnimatedMesh* mesh = smgr->getMesh("assets/obstacles.3ds");
+    IAnimatedMesh* mesh = smgr->getMesh("../assets/obstacles.3ds");
     IMeshSceneNode * node = 0;
     if (mesh)
         node = smgr->addOctreeSceneNode(mesh->getMesh(0), 0);
@@ -66,7 +70,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
         node->setScale(core::vector3df(20,20,20));
     }
 
-    IAnimatedMesh* roomMesh = smgr->getMesh("assets/stadium.3ds");
+    IAnimatedMesh* roomMesh = smgr->getMesh("../assets/stadium.3ds");
     IMeshSceneNode * roomNode = 0;
     if (roomMesh)
         roomNode = smgr->addOctreeSceneNode(roomMesh->getMesh(0), 0);
@@ -92,15 +96,15 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     }
 
     //ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
-    //ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
-    Logger::Log(s->getPosition());
+    ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
+    //Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
     cameras[0]-> bindTargetAndRotation(true);
     cameras[1] = smgr->addCameraSceneNode(s);
     cameras[2] = smgr->addCameraSceneNode(s, s->getPosition(), vector3df(0,0,0));
     camChilds[1] = smgr->addEmptySceneNode(cameras[1]);
     camChilds[1]->setPosition(vector3df(0,-1,0));
-    cameras[1]->setUpVector(vector3df(-1,0,0));
+    //cameras[1]->setUpVector(vector3df(-1,0,0));
     s->setPosition(vector3df(-200, 212, 443));
 
     //First vector input is the radius of the collidable object
@@ -140,22 +144,25 @@ int Sim::start(){
     // how long it was since the last frame
     u32 then = device->getTimer()->getTime();
 
-    while(device->run())
+    while(device->run() && (bool)cap->runSim)
     {
         // Work out a frame delta time.
         const u32 now = device->getTimer()->getTime();
         const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
         then = now;
 
-        ih->update(frameDeltaTime);
-        Logger::Log("FDT");
-        Logger::Log(frameDeltaTime);
+
+        //Logger::Log("FDT");
+        //Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
+
             if (so->getName() == "Sub"){
+                ih->update(frameDeltaTime, so->getRot());
 
                 so->setRot(ih->getRot());
-                Logger::Log(so->getRot());
+                //Logger::Log(so->getRot());
                 so->setAcc(ih->getAcc());
+                so->update(frameDeltaTime);
 
                 if (ih->IsKeyDown(irr::KEY_KEY_R)){
                    so->reset();
@@ -163,45 +170,48 @@ int Sim::start(){
 
                 ///offsets for camera stuff
                 //vector3df temp = so->getPos();
-                vector3df temp;
-                temp.X = -cos(so->getRot().Y*3.141589f/180.0f);
+                vector3df tempPos, tempDir;
+
+                tempDir.X = -cos(so->getRot().Y*3.141589f/180.0f);
                 if (fabs(so->getRot().Y) > 0){
                     float dZ = sin(so->getRot().Y*3.141589f/180.0f);
-                    temp.Z = dZ;
-                    Logger::Log(dZ);
+                    tempDir.Z = dZ;
+                    //Logger::Log(dZ);
                 }
-                temp.normalize();
-                temp *= 20;
-                Logger::Log("temp look:");
-                Logger::Log(temp);
-                cameras[0]->setTarget(so->getPos() + temp);
+                tempDir.normalize();
+                tempPos = so->getPos();
+
+                //camera attached to sub
+                //this call sets the position relative to sub
+                cameras[0]->setPosition(tempDir*5);
+                cameras[0]->setTarget(tempPos + tempDir*100);
                 //cameras[0]->setRotation(so->getRot());
                 //cameras[0]->setRotation(vector3df(0,0,0));
+                irr::core::vector3df tempBottom;
+                tempBottom = so->getPos();
+                tempBottom.Y -= 10;
+                tempBottom.X += tempDir.X/2;
+                tempBottom.Z += tempDir.Z/2;
 
-                temp = so->getPos();
-                temp.Y -= 10;
+                cameras[1]->setTarget(tempBottom);
 
-                cameras[1]->setTarget(temp);
-                //Logger::Log(cameras[1]->getScale());
-                //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
-                //cameras[1]->setRotation(so->getRot());
-                //cameras[1]->setRotation(vector3df(0,0,0));
-                //cameras[1]->setRotation(so->getPos());
-                //cameras[1]->setPosition(so->getPos());
-                cameras[1]->setRotation(temp);
+                //temp = so->getPos();
+                //temp.Z += 20;
+                cameras[2]->setTarget(tempPos);
 
-                temp = so->getPos();
-                temp.Z += 20;
-                cameras[2]->setTarget(temp);
+                //camera 3 not attached to sub so need to add tempPos to the position var
+                vector3df tempTP; //third person view cam
 
-                temp = so->getPos();
-                temp.Z -= 20;
-                temp.Y += 20;
-                cameras[3]->setPosition(temp);
-                cameras[3]->setTarget(so->getPos());
+                tempTP.X = tempPos.X - tempDir.X*30;
+                tempTP.Z = tempPos.Z - tempDir.Z*30;
+                tempTP.Y = tempPos.Y + 20;
+                cameras[3]->setPosition(tempTP);
+                cameras[3]->setTarget(tempPos);
                 //Logger::Log(std::to_string(so->getAcc().X));
+            } else {
+                so->update(frameDeltaTime);
             }
-            so->update(frameDeltaTime);
+
             //ih->setAcc();
         }
         //collision check
@@ -242,12 +252,13 @@ int Sim::start(){
                 frame->at<cv::Vec3b>(y,x) = CVColor;
             }
         }
-        cv::imshow("frame", *frame);
-        cv::waitKey(1);
+        //cv::imshow("frame", *frame);
+        //cv::waitKey(1);
         delete image;
 
     }
     smgr->drop();
     device->closeDevice();
+    cap->threadAlive = (bool*)false;
     return 0;
 }

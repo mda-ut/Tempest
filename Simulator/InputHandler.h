@@ -18,7 +18,7 @@ public:
         return KeyIsDown[keyCode];
     }
 
-    void update(irr::f32);
+    void update(irr::f32, irr::core::vector3df);
 
     bool usingKeyboard();
     void setAcc(irr::core::vector3df);
