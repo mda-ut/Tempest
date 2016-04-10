@@ -62,8 +62,8 @@ void SimObject::update(float dt){
     vel += acc*dt;
     pos += vel;
 
-    Logger::Log("Acc " + std::to_string(acc.Z*dt));
-    Logger::Log("Vel " + std::to_string(vel.Z));
+    //Logger::Log("Acc " + std::to_string(acc.Z*dt));
+    //Logger::Log("Vel " + std::to_string(vel.Z));
 
     node->setPosition(pos);
 }

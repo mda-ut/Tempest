@@ -1,10 +1,14 @@
 #include "Sim.h"
 
 
-Sim::Sim(cv::Mat* frame, InputHandler* in)
+//Sim::Sim(cv::Mat* frame, InputHandler* in, bool* r, bool* ta)
+Sim::Sim(void* c)
 {
-    this->frame = frame;
-    this->ih = in;
+    cap = (dataCap*) c;
+    this->frame = cap->frame;
+    this->ih = cap->ih;
+    this->runSim = cap->runSim;
+    this->threadAlive = cap->threadAlive;
     /**
      * Setup Irrlicht stuff
      */
@@ -93,7 +97,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
 
     //ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
     ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
-    Logger::Log(s->getPosition());
+    //Logger::Log(s->getPosition());
     cameras[0] = smgr->addCameraSceneNode(s, s->getPosition());
     cameras[0]-> bindTargetAndRotation(true);
     cameras[1] = smgr->addCameraSceneNode(s);
@@ -139,7 +143,7 @@ int Sim::start(){
     // how long it was since the last frame
     u32 then = device->getTimer()->getTime();
 
-    while(device->run())
+    while(device->run() && (bool)cap->runSim)
     {
         // Work out a frame delta time.
         const u32 now = device->getTimer()->getTime();
@@ -147,15 +151,15 @@ int Sim::start(){
         then = now;
 
 
-        Logger::Log("FDT");
-        Logger::Log(frameDeltaTime);
+        //Logger::Log("FDT");
+        //Logger::Log(frameDeltaTime);
         for (SimObject *so: objs){
 
             if (so->getName() == "Sub"){
                 ih->update(frameDeltaTime, so->getRot());
 
                 so->setRot(ih->getRot());
-                Logger::Log(so->getRot());
+                //Logger::Log(so->getRot());
                 so->setAcc(ih->getAcc());
                 so->update(frameDeltaTime);
 
@@ -171,14 +175,10 @@ int Sim::start(){
                 if (fabs(so->getRot().Y) > 0){
                     float dZ = sin(so->getRot().Y*3.141589f/180.0f);
                     tempDir.Z = dZ;
-                    Logger::Log(dZ);
+                    //Logger::Log(dZ);
                 }
                 tempDir.normalize();
                 tempPos = so->getPos();
-                //temp *= 20;
-                Logger::Log("temp look:");
-                Logger::Log(tempPos + tempDir*20);
-                Logger::Log(tempPos + tempDir*40);
 
                 //camera attached to sub
                 //this call sets the position relative to sub
@@ -193,18 +193,6 @@ int Sim::start(){
                 tempBottom.Z += tempDir.Z/2;
 
                 cameras[1]->setTarget(tempBottom);
-                //Logger::Log(cameras[1]->getScale());
-                //cameras[1]->setTarget(camChilds[1]->getAbsolutePosition());
-                //cameras[1]->setRotation(so->getRot());
-                //cameras[1]->setRotation(vector3df(0,0,0));
-                //cameras[1]->setRotation(so->getPos());
-                //cameras[1]->setPosition(so->getPos());
-                //temp.Z=so->getRot().Y;
-                //temp.Y=0;
-                //temp.X=0;
-                //cameras[1]->bindTargetAndRotation(false);
-                //cameras[1]->setRotation(temp);
-                //cameras[1]->setRotation(temp);
 
                 //temp = so->getPos();
                 //temp.Z += 20;
@@ -263,12 +251,13 @@ int Sim::start(){
                 frame->at<cv::Vec3b>(y,x) = CVColor;
             }
         }
-        cv::imshow("frame", *frame);
-        cv::waitKey(1);
+        //cv::imshow("frame", *frame);
+        //cv::waitKey(1);
         delete image;
 
     }
     smgr->drop();
     device->closeDevice();
+    cap->threadAlive = (bool*)false;
     return 0;
 }
