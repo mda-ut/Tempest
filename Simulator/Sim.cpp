@@ -54,42 +54,38 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
     light1->setMaterialFlag(EMF_FOG_ENABLE, true);
 
     //Load obstacles (need to be separated so that buoys can move)
-    IAnimatedMesh* mesh = smgr->getMesh("assets/obstacles.3ds");
-    IMeshSceneNode * node = 0;
-    if (mesh)
-        node = smgr->addOctreeSceneNode(mesh->getMesh(0), 0);
-
-    if (node)
-    {
-        node->setMaterialFlag(EMF_FOG_ENABLE, true);
-        node->setMaterialFlag(EMF_LIGHTING, true);
-        node->setScale(core::vector3df(20,20,20));
+    IAnimatedMesh* obsMesh = smgr->getMesh("assets/obstacles.3ds");
+    IMeshSceneNode * obstacles = 0;
+    scene::ITriangleSelector* obsSelector = 0;
+    if (obsMesh) {
+        obstacles = smgr->addOctreeSceneNode(obsMesh->getMesh(0), 0);
+        obstacles->setMaterialFlag(EMF_FOG_ENABLE, true);
+        obstacles->setMaterialFlag(EMF_LIGHTING, true);
+        obstacles->setScale(core::vector3df(20,20,20));
+        obstacles->setPosition(core::vector3df(0,0,0));
+        obsSelector = smgr->createOctreeTriangleSelector(
+                obstacles->getMesh(), obstacles, 128);
+        obstacles->setTriangleSelector(obsSelector);
     }
 
     IAnimatedMesh* roomMesh = smgr->getMesh("assets/stadium.3ds");
     IMeshSceneNode * roomNode = 0;
-    if (roomMesh)
+    scene::ITriangleSelector* roomSelector = 0;
+    if (roomMesh) {
         roomNode = smgr->addOctreeSceneNode(roomMesh->getMesh(0), 0);
-
-
-    if (roomNode)
-    {
         roomNode->setMaterialFlag(EMF_FOG_ENABLE, true);
         roomNode->setMaterialFlag(EMF_LIGHTING, true);
         roomNode->setScale(core::vector3df(20,20,20));
+        roomSelector = smgr->createOctreeTriangleSelector(roomNode->getMesh(),
+                                                          roomNode, 128);
+        roomNode->setTriangleSelector(roomSelector);
+    }
+    scene::IMetaTriangleSelector* selector = smgr->createMetaTriangleSelector();
+    if (roomSelector && obsSelector) {
+        selector->addTriangleSelector(roomSelector);
+        selector->addTriangleSelector(obsSelector);
     }
 
-    scene::ITriangleSelector* selector = 0;
-
-    if (node)
-    {
-        node->setPosition(core::vector3df(0,0,0));
-
-        selector = smgr->createOctreeTriangleSelector(
-                node->getMesh(), node, 128);
-        node->setTriangleSelector(selector);
-        // We're not done with this selector yet, so don't drop it.
-    }
 
     //ICameraSceneNode* camera = smgr->addCameraSceneNodeFPS(0, 100.0f, 0.05f);
     //ICameraSceneNode* camera = smgr->addCameraSceneNode(s, vector3df(0,10,0), vector3df(0,0,0));
@@ -105,7 +101,7 @@ Sim::Sim(cv::Mat* frame, InputHandler* in)
 
     //First vector input is the radius of the collidable object
     anim = smgr->createCollisionResponseAnimator(
-    selector, s, vector3df(7.5f,7.5f,7.5f),
+    selector, s, vector3df(6.5f,6.5f,6.5f),
     vector3df(0,0,0), vector3df(0,0,0));
 
     if (selector)
@@ -150,11 +146,15 @@ int Sim::start(){
         ih->update(frameDeltaTime);
         Logger::Log("FDT");
         Logger::Log(frameDeltaTime);
+        collision = anim->collisionOccurred();
+        if (collision)
+            Logger::Log("collision");
+
         for (SimObject *so: objs){
             if (so->getName() == "Sub"){
 
                 so->setRot(ih->getRot());
-                Logger::Log(so->getRot());
+                //Logger::Log(so->getRot());
                 so->setAcc(ih->getAcc());
 
                 if (ih->IsKeyDown(irr::KEY_KEY_R)){
@@ -172,8 +172,8 @@ int Sim::start(){
                 }
                 temp.normalize();
                 temp *= 20;
-                Logger::Log("temp look:");
-                Logger::Log(temp);
+                //Logger::Log("temp look:");
+                //Logger::Log(temp);
                 cameras[0]->setTarget(so->getPos() + temp);
                 //cameras[0]->setRotation(so->getRot());
                 //cameras[0]->setRotation(vector3df(0,0,0));
@@ -188,7 +188,7 @@ int Sim::start(){
                 //cameras[1]->setRotation(vector3df(0,0,0));
                 //cameras[1]->setRotation(so->getPos());
                 //cameras[1]->setPosition(so->getPos());
-                cameras[1]->setRotation(temp);
+                //cameras[1]->setTarget(so->node->getRotation());
 
                 temp = so->getPos();
                 temp.Z += 20;
@@ -204,11 +204,6 @@ int Sim::start(){
             so->update(frameDeltaTime);
             //ih->setAcc();
         }
-        //collision check
-        collision = anim->collisionOccurred();
-        if (collision)
-            Logger::Log("collision");
-
 
         driver->setViewPort(rect<s32>(0,0,resX, resY));
         driver->beginScene(true, true, SColor(255,100,101,140));
